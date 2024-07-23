@@ -1,0 +1,52 @@
+#version 460 core
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(rgba32f, binding = 0) uniform image2D texture0;
+
+uniform bool mousePressed;
+uniform ivec2 mousePos;
+uniform ivec2 winSize;
+
+const vec4 SAND_COLOR = vec4(1.0, 1.0, 0.0, 1.0);
+
+ivec2 brushSize = ivec2(10, 10);
+
+bool isBetween(int number, int x0, int x1) {
+    return number > x0 && number < x1;
+}
+
+void main() {
+    vec4 value = vec4(0);
+    ivec2 texCoord = ivec2(gl_GlobalInvocationID.xy);
+
+    texCoord.y = winSize.y -1;
+    for (int i = 0; i < winSize.y; i++) {
+        vec4 prevValue = imageLoad(texture0, texCoord);
+        value = prevValue;
+        if (mousePressed) {
+            if (isBetween(texCoord.x, mousePos.x, mousePos.x + brushSize.x)) {
+                if (isBetween(texCoord.y, mousePos.y, mousePos.y + brushSize.y)) {
+                    value = SAND_COLOR;
+                }
+            }
+        }
+
+        if (value == SAND_COLOR && i < winSize.y -1) {
+            vec4 valueBellow = imageLoad(texture0, texCoord - ivec2(0, 1));
+            if (valueBellow != SAND_COLOR) {
+                imageStore(texture0, texCoord - ivec2(0, 1), SAND_COLOR);
+                imageStore(texture0, texCoord, vec4(0));
+                texCoord.y--;
+                i++;
+            } else {
+                imageStore(texture0, texCoord, SAND_COLOR);
+            }
+
+        } else {
+            imageStore(texture0, texCoord, value);
+        }
+
+
+        texCoord.y--;
+    }
+
+}
