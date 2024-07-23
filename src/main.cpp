@@ -61,7 +61,7 @@ int main() {
         glUniform2i(glGetUniformLocation(compute_shader.ID(), "winSize"), static_cast<int>(win.Width()), static_cast<int>(win.Height()));
 
         // Dispatch the compute shader
-        glDispatchCompute(width, 1, 1);
+        glDispatchCompute(width, height, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
 

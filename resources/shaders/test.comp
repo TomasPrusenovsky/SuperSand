@@ -7,46 +7,47 @@ uniform ivec2 mousePos;
 uniform ivec2 winSize;
 
 const vec4 SAND_COLOR = vec4(1.0, 1.0, 0.0, 1.0);
+const vec4 CLEAR_COLOR = vec4(0);
 
-ivec2 brushSize = ivec2(10, 10);
+ivec2 brushSize = ivec2(80, 80);
 
 bool isBetween(int number, int x0, int x1) {
     return number > x0 && number < x1;
 }
 
+bool isInside(ivec2 point, ivec2 x0, ivec2 x1) {
+    return isBetween(point.x, x0.x, x1.x) && isBetween(point.y, x0.y, x1.y);
+}
+
 void main() {
     vec4 value = vec4(0);
     ivec2 texCoord = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 texCoordOther = texCoord + ivec2(winSize.x, 0);
+    vec4 colorOther = imageLoad(texture0, texCoordOther);
 
-    texCoord.y = winSize.y -1;
-    for (int i = 0; i < winSize.y; i++) {
-        vec4 prevValue = imageLoad(texture0, texCoord);
-        value = prevValue;
-        if (mousePressed) {
-            if (isBetween(texCoord.x, mousePos.x, mousePos.x + brushSize.x)) {
-                if (isBetween(texCoord.y, mousePos.y, mousePos.y + brushSize.y)) {
-                    value = SAND_COLOR;
-                }
-            }
+    // copy old image
+    imageStore(texture0, texCoord, colorOther);
+    vec4 currentColor = imageLoad(texture0, texCoord);
+
+
+    // clear the render image
+    imageStore(texture0, texCoordOther, CLEAR_COLOR);
+
+
+    // painting
+    if (mousePressed) {
+        if (isInside(texCoord, mousePos, mousePos + brushSize)) {
+            imageStore(texture0, texCoordOther, SAND_COLOR);
         }
-
-        if (value == SAND_COLOR && i < winSize.y -1) {
-            vec4 valueBellow = imageLoad(texture0, texCoord - ivec2(0, 1));
-            if (valueBellow != SAND_COLOR) {
-                imageStore(texture0, texCoord - ivec2(0, 1), SAND_COLOR);
-                imageStore(texture0, texCoord, vec4(0));
-                texCoord.y--;
-                i++;
-            } else {
-                imageStore(texture0, texCoord, SAND_COLOR);
-            }
-
-        } else {
-            imageStore(texture0, texCoord, value);
-        }
-
-
-        texCoord.y--;
     }
+
+    // logic
+    bool isDown = texCoord.y == 0;
+    if (currentColor == SAND_COLOR) {
+        if (!isDown) {
+            imageStore(texture0, texCoordOther + ivec2(1, 0), SAND_COLOR);
+        }
+    }
+
 
 }
